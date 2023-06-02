@@ -1,0 +1,104 @@
+{
+    "players": {
+        "pazzazzo": {
+            "x": 80,
+            "y": 96,
+            "map": "DemoRoom"
+        }
+    },
+    "maps": {
+        "DemoRoom": {
+            "lowerSrc": "./images/maps/DemoLower.png",
+            "upperSrc": "./images/maps/DemoUpper.png",
+            "gameObjects": {
+                "npcA": {
+                    "x": 112,
+                    "y": 144,
+                    "src": "./images/characters/people/npc1.png",
+                    "behaviorLoop": [
+                        {
+                            "type": "stand",
+                            "direction": "left",
+                            "time": 800
+                        },
+                        {
+                            "type": "stand",
+                            "direction": "up",
+                            "time": 800
+                        },
+                        {
+                            "type": "stand",
+                            "direction": "right",
+                            "time": 1200
+                        },
+                        {
+                            "type": "stand",
+                            "direction": "up",
+                            "time": 300
+                        }
+                    ],
+                    "talking": [
+                        {
+                            "events": [
+                                {
+                                    "type": "textMessage",
+                                    "text": "Hello world!",
+                                    "faceHero": "npcA"
+                                },
+                                {
+                                    "type": "textMessage",
+                                    "text": "Go away!"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "npcB": {
+                    "x": 48,
+                    "y": 112,
+                    "src": "./images/characters/people/npc2.png",
+                    "behaviorLoop": [
+                        {
+                            "type": "walk",
+                            "direction": "left"
+                        },
+                        {
+                            "type": "stand",
+                            "direction": "up",
+                            "time": 800
+                        },
+                        {
+                            "type": "walk",
+                            "direction": "up"
+                        },
+                        {
+                            "type": "walk",
+                            "direction": "right"
+                        },
+                        {
+                            "type": "walk",
+                            "direction": "down"
+                        }
+                    ]
+                }
+            },
+            "walls": {
+                "112,96": true,
+                "128,96": true,
+                "112,112": true,
+                "128,112": true
+            }
+        },
+        "Street": {
+            "lowerSrc": "./images/maps/StreetLower.png",
+            "upperSrc": "./images/maps/StreetUpper.png",
+            "gameObjects": {
+                "npc1": {
+                    "x": 112,
+                    "y": 160,
+                    "src": "./images/characters/people/npc1.png"
+                }
+            }
+        }
+    }
+}
