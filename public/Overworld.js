@@ -1,78 +1,133 @@
-import { DirectionInput } from "./DirectionInput.js";
-import { GameObject } from "./GameObject.js";
-import { KeyPressListener } from "./KeyPressListener.js";
-import { OverworldMap } from "./OverworldMap.js";
+import GameObject from "./GameObject.js";
+import Main from "./Main.js";
+import Person from "./Person.js";
+import { nextPosition, withGrid } from "./Utils.js";
 
-export class Overworld {
-    constructor(config) {
-        this.canvas = document.getElementsByTagName("canvas")[0]
-        this.ctx = this.canvas.getContext("2d")
-    }
+/**
+ * @typedef {{ id: string, src: string, x: number, y: number, side: 0|1, img: undefined|Image }} ScreenObject
+ * 
+ */
 
-    startGameLoop() {
-        const step = () => {
-            //Clear off the canvas
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+class Overworld {
+    constructor(config, main = new Main) {
+        this.main = main
+        this.config = config;
 
-            //Etablish the camera person
-            const cameraPerson = this.map.gameObjects.hero
+        this.id = config.id || null;
 
-            //Update all objects
-            Object.values(this.map.gameObjects).forEach(object => {
-                object.update({
-                    arrow: this.directionInput.direction,
-                    map: this.map
-                })
-            })
+        /** @type {Map<String, Person>} */
+        this.characters = new Map();
 
-            // Draw Lower layer
-            this.map.drawLowerImage(this.ctx, cameraPerson)
+        /** @type {Image} */
+        this.lowerImage = new Image();
+        this.lowerImage.src = config.lowerSrc;
 
-            //Draw Game Objects
-            Object.values(this.map.gameObjects).sort((a, b) => {return a.y - b.y}).forEach(object => {
-                object.sprite.draw(this.ctx, cameraPerson)
-            })
+        /** @type {Image} */
+        this.upperImage = new Image();
+        this.upperImage.src = config.upperSrc;
+
+        /** @type {Object} */
+        this.walls = config.walls || {};
 
 
-            // Draw Upper layer
-            this.map.drawUpperImage(this.ctx, cameraPerson)
+        /** @type {ScreenObject[]} */
+        this.screens = config.screens || [];
 
-            requestAnimationFrame(() => { step(); })
-        }
-        step()
-    }
+        /** @type {Object} */
+        this.portals = config.portals || {};
 
-    bindActionInput() {
-        new KeyPressListener("Enter", () => {
-            //Is there a person here to talk to?
-            this.map.checkForActionCutscene()
+        config.characters.forEach(character => {
+            this.addCharacter(character)
+        })
+
+        this.screens.forEach((screen, i) => {
+            let img = new Image();
+            img.src = 'data:image/png;base64,' + screen.src;
+            this.screens[i].img = img;
+            img.onload = () => {
+                this.screens[i].loaded = true;
+            }
         })
     }
 
-    init() {
-        console.log("overworld init");
-        this.map = new OverworldMap(window.OverworldMaps.DemoRoom)
-        this.map.mountObjects()
-
-
-        this.bindActionInput()
-
-        this.directionInput = new DirectionInput().init()
-
-        this.startGameLoop();
-
-        // this.map.startCutscene([
-        //     { who: "hero", type: "walk", direction: "down" },
-        //     { who: "hero", type: "walk", direction: "down" },
-        //     { who: "npcA", type: "walk", direction: "up" },
-        //     { who: "npcA", type: "walk", direction: "left" },
-        //     { who: "hero", type: "stand", direction: "right", time: 200 },
-        //     { type: "textMessage", text: "Hello world!"},
-        //     { who: "npcA", type: "walk", direction: "down" },
-        //     { who: "npcA", type: "stand", direction: "up", time: 200 },
-        // ])
-
-        console.log("overworld initied");
+    isPortal(currentX, currentY, direction) {
+        const { x, y } = nextPosition(currentX, currentY, direction)
+        return this.portals[`${x},${y}`] || false
     }
 
+    /**
+     * 
+     * @param {number} currentX 
+     * @param {number} currentY 
+     * @param {string} direction 
+     * @param {Person} person 
+     */
+    usePortal(currentX, currentY, direction, person) {
+        person.startBehavior({
+            type: "walk",
+            direction: direction,
+            thoughtPortal: true
+        })
+        this.main.keyboardController.arrow = null
+    }
+
+    addCharacter(config) {
+        new Person(config, this.main).mount(this)
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {GameObject} cameraPerson 
+     */
+    drawLowerImage(ctx, cameraPerson) {
+        ctx.drawImage(
+            this.lowerImage,
+            withGrid(Math.floor(ctx.canvas.width / 16) / 2) - withGrid(cameraPerson.x),
+            withGrid(Math.floor(ctx.canvas.height / 16) / 2) - withGrid(cameraPerson.y)
+        )
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {GameObject} cameraPerson 
+     */
+    drawUpperImage(ctx, cameraPerson) {
+        ctx.drawImage(this.upperImage,
+            withGrid(Math.floor(ctx.canvas.width / 16) / 2) - withGrid(cameraPerson.x),
+            withGrid(Math.floor(ctx.canvas.height / 16) / 2) - withGrid(cameraPerson.y)
+        )
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {GameObject} cameraPerson 
+     */
+    drawScreens(ctx, cameraPerson, side) {
+        this.screens.forEach(screen => {
+            if (screen.side === side) {
+                const x = withGrid(Math.floor(ctx.canvas.width / 16) / 2) - withGrid(cameraPerson.x) + screen.x;
+                const y = withGrid(Math.floor(ctx.canvas.height / 16) / 2) - withGrid(cameraPerson.y) + screen.y;
+                ctx.drawImage(screen.img, x, y)
+            }
+        })
+    }
+
+    isSpaceTaken(currentX, currentY, direction) {
+        const { x, y } = nextPosition(currentX, currentY, direction)
+        return this.walls[`${x},${y}`] || false
+    }
+
+    addWall(x, y) {
+        this.walls[`${x},${y}`] = true;
+    }
+    removeWall(x, y) {
+        delete this.walls[`${x},${y}`];
+    }
+    moveWall(wasX, wasY, direction) {
+        this.removeWall(wasX, wasY);
+        const { x, y } = nextPosition(wasX, wasY, direction);
+        this.addWall(x, y)
+    }
 }
+
+export default Overworld;

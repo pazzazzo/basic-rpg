@@ -7,7 +7,7 @@ export function asGridCoord(x, y) {
 export function nextPosition(initialX, initialY, direction) {
     let x = initialX
     let y = initialY
-    const size = 16
+    const size = 1
 
     if (direction === "left") {
         x -= size;
@@ -30,11 +30,4 @@ export function oppositeDirection(direction) {
         return "down"
     }
     return "up"
-}
-
-export function emitEvent(name, detail) {
-    const event = new CustomEvent(name, {
-        detail
-    });
-    document.dispatchEvent(event)
 }

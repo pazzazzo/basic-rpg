@@ -1,24 +1,23 @@
-import { GameObject } from "./GameObject.js";
-import { withGrid } from "./utils.js";
+import GameObject from "./GameObject.js";
+import { withGrid } from "./Utils.js";
 
-export class Sprite {
+class Sprite {
     constructor(config) {
 
-        //Set up the image
         this.image = new Image()
-        this.image.src = config.src;
+        this.image.src = config.src || "./assets/none.png";
+
         this.image.onload = () => {
             this.isLoaded = true
         }
         this.image.onerror = () => {
-            this.image.src = "./images/none.png";
+            this.image.src = "./assets/none.png";
         }
 
-        //Shadow
         this.shadow = new Image();
-        this.useShadow = true; //config.useShadow || false
+        this.useShadow = typeof config.useShadow === "boolean" ? config.useShadow : true;
         if (this.useShadow) {
-            this.shadow.src = "./images/characters/shadow.png";
+            this.shadow.src = "./assets/characters/shadow.png";
         }
         this.shadow.onload = () => {
             this.isShadowLoaded = true
@@ -35,13 +34,13 @@ export class Sprite {
             "walk-up": [[1, 2], [0, 2], [3, 2], [0, 2]],
             "walk-left": [[1, 3], [0, 3], [3, 3], [0, 3]],
         }
-        this.currentAnimation = "idle-down" // config.currentAnimation || "idle-down"
+        this.currentAnimation = typeof config.currentAnimation === "string" ? config.currentAnimation : "idle-down";
         this.currentAnimationFrame = 0;
         this.animationFrameLimit = config.animationFrameLimit || 8;
         this.animationFrameProgress = this.animationFrameLimit
 
-        //Reference the game object
-        this.gameObject = config.gameObject
+        /** @type {GameObject} */
+        this.gameObject = config.gameObject;
     }
 
     get frame() {
@@ -71,8 +70,11 @@ export class Sprite {
     }
 
     draw(ctx = new CanvasRenderingContext2D(), cameraPerson = new GameObject()) {
-        const x = this.gameObject.x - 8 + withGrid(Math.floor(ctx.canvas.width/16)/2) - cameraPerson.x;
-        const y = this.gameObject.y - 18 + withGrid(Math.floor(ctx.canvas.height/16)/2) - cameraPerson.y;
+        // const x = this.gameObject.x - 8 + withGrid(Math.floor(ctx.canvas.width/16)/2) - cameraPerson.x;
+        // const y = this.gameObject.y - 18 + withGrid(Math.floor(ctx.canvas.height/16)/2) - cameraPerson.y;
+
+        const x = withGrid(this.gameObject.x) - 8 + withGrid(Math.floor(ctx.canvas.width / 16) / 2) - withGrid(cameraPerson.x);
+        const y = withGrid(this.gameObject.y) - 18 + withGrid(Math.floor(ctx.canvas.height / 16) / 2) - withGrid(cameraPerson.y);
 
         this.isShadowLoaded && ctx.drawImage(this.shadow, x, y)
 
@@ -87,3 +89,5 @@ export class Sprite {
         this.updateAnimationProgress()
     }
 }
+
+export default Sprite;

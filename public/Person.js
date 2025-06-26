@@ -1,76 +1,93 @@
-import { GameObject } from "./GameObject.js";
-import { emitEvent } from "./utils.js";
+import GameObject from "./GameObject.js";
+import { nextPosition } from "./Utils.js";
 
-export class Person extends GameObject {
-    constructor(config) {
-        super(config)
+class Person extends GameObject {
+    constructor(config, main) {
+        super(config, main)
         this.movingProgressRemaining = 0;
-        this.isStanding = false;
-
         this.isPlayerControlled = config.isPlayerControlled || false
-
         this.directionUpdate = {
-            "up": ["y", -1],
-            "down": ["y", 1],
-            "left": ["x", -1],
-            "right": ["x", 1],
+            "up": ["y", -1 / 16],
+            "down": ["y", 1 / 16],
+            "left": ["x", -1 / 16],
+            "right": ["x", 1 / 16],
         }
+
+        /** @type {Object[]} */
+        this.behaviors = new Array()
     }
 
-    update(state) {
-        if (this.movingProgressRemaining > 0) {
-            this.updatePosition()
-        } else {
-            if (!state.map.isCutscenePlaying && this.isPlayerControlled && state.arrow) {
-                this.startBehavior(state, {
-                    type: "walk",
-                    direction: state.arrow
-                })
-            }
-            this.updateSprite(state)
-        }
-    }
-
-    startBehavior(state, behavior) {
-        this.direction = behavior.direction;
+    startBehavior(behavior) {
+        this.facing = behavior.direction;
         if (behavior.type === "walk") {
-            if (state.map.isSpaceTaken(this.x, this.y, this.direction)) {
+            if (this.id === this.main.username) {
+                if (this.overworld.isPortal(this.x, this.y, this.facing) && !behavior.thoughtPortal) {
+                    this.overworld.usePortal(this.x, this.y, this.facing, this);
+                    return;
+                }
+                if (this.overworld.isSpaceTaken(this.x, this.y, this.facing)) {
+                    behavior.retry && setTimeout(() => {
+                        this.startBehavior(behavior)
+                    }, 10);
+                    return
+                }
 
-                behavior.retry && setTimeout(() => {
-                    this.startBehavior(state, behavior)
-                }, 10);
-                return
+                this.overworld.moveWall(this.x, this.y, this.facing)
+                this.movingProgressRemaining = 16
+                this.updateSprite()
+                !behavior.serverCommand && this.main.socket.emit("behavior", behavior, (...a) => {this.stopBehviaor(...a)});
+            } else {
+                this.overworld.moveWall(this.x, this.y, this.facing)
+                this.movingProgressRemaining = 16
+                this.updateSprite()
             }
-            
-            state.map.moveWall(this.x, this.y, this.direction)
-            this.movingProgressRemaining = 16
-            this.updateSprite(state)
+            let t = nextPosition(this.x, this.y, this.facing);
+            console.log(`Moving ${this.id} to (${t.x}, ${t.y}) facing ${this.facing}`);
         }
 
         if (behavior.type === "stand") {
             this.isStanding = true
             setTimeout(() => {
-                emitEvent("PersonStandComplete", { whoId: this.id })
                 this.isStanding = false
             }, behavior.time);
         }
     }
 
+    update() {
+        if (this.movingProgressRemaining > 0) {
+            this.updatePosition()
+        } else {
+            if (this.behaviors.length > 0) {
+                const nextBehavior = this.behaviors.shift();
+                this.startBehavior(nextBehavior);
+            }
+            if (this.isPlayerControlled && this.main.keyboardController.arrow && this.movingProgressRemaining === 0) {
+                this.startBehavior({type: "walk", direction: this.main.keyboardController.arrow})
+            }
+            this.updateSprite()
+        }
+    }
+
     updatePosition() {
-        const [property, change] = this.directionUpdate[this.direction]
+        const [property, change] = this.directionUpdate[this.facing]
         this[property] += change;
         this.movingProgressRemaining--;
-
-        if (this.movingProgressRemaining === 0) {
-            emitEvent("PersonWalkingComplete", { whoId: this.id })
-        }
     }
 
     updateSprite() {
         if (this.movingProgressRemaining > 0) {
-            this.sprite.setAnimation(`walk-${this.direction}`)
+            this.sprite.setAnimation(`walk-${this.facing}`)
             return;
         }
-        this.sprite.setAnimation(`idle-${this.direction}`)
+        this.sprite.setAnimation(`idle-${this.facing}`)
+    }
+    stopBehviaor(behavior, x, y, facing) {
+        this.x = x;
+        this.y = y;
+        this.facing = facing;
+        this.movingProgressRemaining = 0;
+        this.updateSprite();
     }
 }
+
+export default Person;
