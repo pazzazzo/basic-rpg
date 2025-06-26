@@ -9,15 +9,15 @@ module.exports = class Player extends Person {
      * @param {Socket} socket 
      * @param {Server} server 
      */
-    constructor(username, socket, server) {
-        super({ id: username, ...server.database.players[username] }, server)
-        console.log(`New player: ${username} (${socket.id})`);
-        this.username = username
+    constructor(config, socket, server) {
+        super(config, server)
+        this.username = config._id.replace("user:", "")
+        console.log(`New player: ${this.username} (${socket.id})`);
         this.socket = socket
         this.server = server
-        this.skin = server.database.players[username].skin || "hero"
+        this.skin = config.skin || "hero"
         this.isPlayer = true
-        this.mount(server.overworlds.get(server.database.players[username].map))
+        this.mount(server.overworlds.get(config.map))
         socket.join(this.overworld.id)
 
         socket.emit("map", this.overworld.toJSON())

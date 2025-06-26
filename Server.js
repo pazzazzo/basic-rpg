@@ -7,6 +7,7 @@ const Player = require('./Player.js');
 const Overworld = require('./Overworld.js');
 const ngrok = require('@ngrok/ngrok');
 const os = require("os")
+const PouchDB = require('pouchdb');
 
 require('dotenv').config()
 
@@ -19,13 +20,18 @@ module.exports = class Server {
         this.io = new IOServer(this.server);
         this.port = 3000
 
-        this.database = JSON.parse(readFileSync(__dirname + "/database.json").toString())
+        this.database = new PouchDB('./database');
 
         this.overworlds = new Map();
 
-        for (const mapId in this.database.maps) {
-            this.overworlds.set(mapId, new Overworld({ id: mapId, ...this.database.maps[mapId] }, this))
-        }
+        this.database.get("worldlist").then(v => {
+            v.data.forEach(async worldID => {
+                let world = await this.database.get(worldID)
+                this.overworlds.set(worldID, new Overworld(world, this))
+                console.log(`${worldID} loaded`);
+            })
+        })
+
         let i = 0
         setInterval(() => {
             let imglist = [
@@ -33,7 +39,7 @@ module.exports = class Server {
                 "iVBORw0KGgoAAAANSUhEUgAAABgAAAAJCAYAAAAo/ezGAAAAAXNSR0IArs4c6QAAAHhJREFUOE9jTGDn/89AQ8AIsmD++nU0scLez5eB0Y6F6//BTZsZlLPKGe5O60ShYbYii8PEYOqR+ciuBOkhaAFIET4DccnDLMewAN3FID7MEGwuJtkC9CCiug8IxQE2H8J8CfIhzjjY0dNPk1TkUVIISUU0MR1qKADmmYDXdECiiwAAAABJRU5ErkJggg=="
             ]
             i = (i + 1) % imglist.length
-            this.io.to("DemoRoom").emit("screen-update", {
+            this.io.to("world:DemoRoom").emit("screen-update", {
                 id: "demoScreen",
                 src: imglist[i],
             })
@@ -41,32 +47,36 @@ module.exports = class Server {
 
         this.app.use(express.static("public"))
 
-        this.io.on('connection', (socket) => {
+        this.io.on('connection', async (socket) => {
             console.log(`New connection from ${socket.id}`);
-
-            if (socket.handshake.auth.username && this.database.players[socket.handshake.auth.username]) {
+            let userData = await this.tryGet("user:" + socket.handshake.auth.username)
+            if (socket.handshake.auth.username && userData) {
                 let player = new Player(socket.handshake.auth.username, socket, this)
                 this.onNewPlayer(player)
-                return
-            }
-            socket.emit("login", (username) => {
-                if (this.database.players[username]) {
-                    let player = new Player(username, socket, this)
-                    this.onNewPlayer(player)
-                } else {
-                    this.database.players[username] = {
-                        x: 5,
-                        y: 6,
-                        map: "DemoRoom",
-                        skin: "hero",
-                        isPlayer: true
+            } else {
+                socket.emit("login", async (username) => {
+                    userData = await this.tryGet("user:" + username)
+                    if (userData) {
+                        let player = new Player(userData, socket, this)
+                        this.onNewPlayer(player)
+                    } else {
+                        let user = {
+                            _id: `user:${username}`,
+                            x: 5,
+                            y: 6,
+                            map: "world:DemoRoom",
+                            skin: "hero",
+                            isPlayer: true
+                        }
+                        let r = await this.database.put(user)
+                        console.log(`Create user ${username}: ${r.ok ? "Success" : "Failed"}`);
+
+                        let player = new Player(user, socket, this)
+                        this.onNewPlayer(player)
                     }
-                    this.save()
-                    let player = new Player(username, socket, this)
-                    this.onNewPlayer(player)
-                }
-                socket.request.headers['set-cookie'] = `username=${username}; Path=/; HttpOnly; SameSite=Strict`
-            })
+                    socket.request.headers['set-cookie'] = `username=${username}; Path=/; HttpOnly; SameSite=Strict`
+                })
+            }
 
             socket.on("disconnect", () => {
                 console.log(`Disconnection from ${socket.id}`);
@@ -91,7 +101,13 @@ module.exports = class Server {
     onNewPlayer(player) {
 
     }
-    save() {
-        writeFileSync(__dirname + "/database.json", JSON.stringify(this.database))
+
+    async tryGet(id) {
+        try {
+            let u = await this.database.get(id);
+            return u;
+        } catch (err) {
+            return undefined;
+        }
     }
 }

@@ -15,7 +15,7 @@ class Overworld {
         this.config = config;
 
         /** @type {String} */
-        this.id = config.id || null;
+        this.id = config._id || null;
 
         /** @type {Map<String, GameObject>} */
         this.characters = new Map();
@@ -26,7 +26,7 @@ class Overworld {
         this.portals = config.portals || {};
 
         for (const character in config.characters) {
-            let char = new Person({ id: character, ...config.characters[character] }, this.main)
+            let char = new Person({ _id: character, ...config.characters[character] }, this.main)
             char.mount(this);
         }
     }

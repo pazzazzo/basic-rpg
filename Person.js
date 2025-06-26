@@ -12,7 +12,7 @@ class Person {
         this.server = server
 
         /** @type {String} */
-        this.id = config.id || null;
+        this.id = config._id || null;
 
         /** @type {number} */
         this.x = config.x || 0;
@@ -108,8 +108,11 @@ class Person {
             this.overworld.moveWall(this.x, this.y, this.facing)
             this.updatePosition()
             console.log(`Moving ${this.id} to (${this.x}, ${this.y}) facing ${this.facing}`);
-            
-            this.server.io.to(this.overworld.id).emit("gameobject-behavior", this.id, behavior)
+            if (this.socket && !behavior.serverCommand) {
+                this.server.io.to(this.overworld.id).except(this.socket.id).emit("gameobject-behavior", this.id, behavior)
+            } else {
+                this.server.io.to(this.overworld.id).emit("gameobject-behavior", this.id, behavior)
+            }
         }
 
         if (behavior.type === "stand") {

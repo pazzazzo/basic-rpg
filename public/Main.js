@@ -27,7 +27,7 @@ class Main {
             console.log(map);
 
             /** @type {Person} */
-            this.player = this.map.characters.get(this.username)
+            this.player = this.map.characters.get("user:" + this.username)
             this.player.isPlayerControlled = true
             this.keyboardController = new KeyboardController(this)
             this.startGameLoop()
@@ -39,7 +39,7 @@ class Main {
             console.log(map);
 
             /** @type {Person} */
-            this.player = this.map.characters.get(this.username)
+            this.player = this.map.characters.get("user:" + this.username)
             this.player.isPlayerControlled = true
             this.ready = true
         })
@@ -50,7 +50,7 @@ class Main {
                 if (gameObject.id === this.username && !behavior.serverCommand) {
                     return
                 }
-                gameObject.behaviors.push(behavior);
+                gameObject.behaviors.push({...behavior});
             }
         })
 
@@ -108,7 +108,7 @@ class Main {
         const step = () => {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
-            const cameraPerson = this.map.characters.get(this.username)
+            const cameraPerson = this.player
 
             this.map.characters.values().toArray().forEach(object => {
                 object.update({

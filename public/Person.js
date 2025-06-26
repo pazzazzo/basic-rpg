@@ -20,7 +20,7 @@ class Person extends GameObject {
     startBehavior(behavior) {
         this.facing = behavior.direction;
         if (behavior.type === "walk") {
-            if (this.id === this.main.username) {
+            if (this.id === "user:" + this.main.username) {
                 if (this.overworld.isPortal(this.x, this.y, this.facing) && !behavior.thoughtPortal) {
                     this.overworld.usePortal(this.x, this.y, this.facing, this);
                     return;
@@ -35,7 +35,7 @@ class Person extends GameObject {
                 this.overworld.moveWall(this.x, this.y, this.facing)
                 this.movingProgressRemaining = 16
                 this.updateSprite()
-                !behavior.serverCommand && this.main.socket.emit("behavior", behavior, (...a) => {this.stopBehviaor(...a)});
+                !behavior.serverCommand && !behavior.serverBroadcast && this.main.socket.emit("behavior", behavior, (...a) => {this.stopBehviaor(...a)});
             } else {
                 this.overworld.moveWall(this.x, this.y, this.facing)
                 this.movingProgressRemaining = 16
