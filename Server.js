@@ -31,19 +31,20 @@ module.exports = class Server {
                 console.log(`${worldID} loaded`);
             })
         })
-
-        let i = 0
-        setInterval(() => {
-            let imglist = [
-                "iVBORw0KGgoAAAANSUhEUgAAABgAAAAJCAIAAACnn3uRAAAAAXNSR0IArs4c6QAAAHlJREFUKJFjTGDnZ6AGYGFgYJi/fh2Fptj7+bLc+/sbwlHOKmdgYLg7rRPOhnDhbKyycCkmZIORtd2d1glXB2GgyaI5iokBB1DOKkd2C0HAgksC0078AMVFylnlcP34XYQpxWjHwrWjp58kyzGBR0khox0LF4WmQAAASPQt0A9kuaAAAAAASUVORK5CYII=",
-                "iVBORw0KGgoAAAANSUhEUgAAABgAAAAJCAYAAAAo/ezGAAAAAXNSR0IArs4c6QAAAHhJREFUOE9jTGDn/89AQ8AIsmD++nU0scLez5eB0Y6F6//BTZsZlLPKGe5O60ShYbYii8PEYOqR+ciuBOkhaAFIET4DccnDLMewAN3FID7MEGwuJtkC9CCiug8IxQE2H8J8CfIhzjjY0dNPk1TkUVIISUU0MR1qKADmmYDXdECiiwAAAABJRU5ErkJggg=="
-            ]
-            i = (i + 1) % imglist.length
-            this.io.to("world:DemoRoom").emit("screen-update", {
-                id: "demoScreen",
-                src: imglist[i],
-            })
-        }, 1000);
+        if (process.env.NODE_ENV !== 'test') {
+            let i = 0
+            setInterval(() => {
+                let imglist = [
+                    "iVBORw0KGgoAAAANSUhEUgAAABgAAAAJCAIAAACnn3uRAAAAAXNSR0IArs4c6QAAAHlJREFUKJFjTGDnZ6AGYGFgYJi/fh2Fptj7+bLc+/sbwlHOKmdgYLg7rRPOhnDhbKyycCkmZIORtd2d1glXB2GgyaI5iokBB1DOKkd2C0HAgksC0078AMVFylnlcP34XYQpxWjHwrWjp58kyzGBR0khox0LF4WmQAAASPQt0A9kuaAAAAAASUVORK5CYII=",
+                    "iVBORw0KGgoAAAANSUhEUgAAABgAAAAJCAYAAAAo/ezGAAAAAXNSR0IArs4c6QAAAHhJREFUOE9jTGDn/89AQ8AIsmD++nU0scLez5eB0Y6F6//BTZsZlLPKGe5O60ShYbYii8PEYOqR+ciuBOkhaAFIET4DccnDLMewAN3FID7MEGwuJtkC9CCiug8IxQE2H8J8CfIhzjjY0dNPk1TkUVIISUU0MR1qKADmmYDXdECiiwAAAABJRU5ErkJggg=="
+                ]
+                i = (i + 1) % imglist.length
+                this.io.to("world:DemoRoom").emit("screen-update", {
+                    id: "demoScreen",
+                    src: imglist[i],
+                })
+            }, 1000);
+        }
 
         this.app.use(express.static("public"))
 
@@ -83,20 +84,21 @@ module.exports = class Server {
             })
         })
 
-        this.server.listen(this.port, async () => {
-            console.log(`App online at http://localhost:${this.port} 🟢`)
-            // const url = (await ngrok.connect({ addr: this.port, authtoken: NGROK_AUTH_TOKEN })).url()
-            // console.log(`App online at ${url} 🟢`);
-            const interfaces = os.networkInterfaces();
-            Object.keys(interfaces).forEach((iface) => {
-                interfaces[iface].forEach((address) => {
-                    if (address.family === 'IPv4' && !address.internal) {
-                        console.log(`App online at http://${address.address}:${this.port} 🟢`);
-                    }
+        if (process.env.NODE_ENV !== 'test') {
+            this.server.listen(this.port, async () => {
+                console.log(`App online at http://localhost:${this.port} 🟢`)
+                // const url = (await ngrok.connect({ addr: this.port, authtoken: NGROK_AUTH_TOKEN })).url()
+                // console.log(`App online at ${url} 🟢`);
+                const interfaces = os.networkInterfaces();
+                Object.keys(interfaces).forEach((iface) => {
+                    interfaces[iface].forEach((address) => {
+                        if (address.family === 'IPv4' && !address.internal) {
+                            console.log(`App online at http://${address.address}:${this.port} 🟢`);
+                        }
+                    });
                 });
-            });
-
-        })
+            })
+        }
     }
     onNewPlayer(player) {
 
