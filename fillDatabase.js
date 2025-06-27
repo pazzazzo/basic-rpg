@@ -64,7 +64,7 @@ let worldDemoRoom = {
         "3,7": true
     },
     "portals": {
-        "7,4": { "dest": "world:Street", "x": 5, "y": 9, "direction": "down" }
+        "5,10": { "dest": "world:Street", "x": 5, "y": 9, "direction": "down" }
     },
     "screens": [
         {
@@ -89,7 +89,7 @@ let worldStreet = {
         }
     },
     "portals": {
-        "5,9": { "dest": "world:DemoRoom", "x": 7, "y": 4, "direction": "down" },
+        "5,9": { "dest": "world:DemoRoom", "x": 5, "y": 10, "direction": "up" },
         "25,5": { "dest": "world:StreetNorth", "x": 7, "y": 16, "direction": "up" }
     }
 };

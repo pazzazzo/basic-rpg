@@ -44,6 +44,11 @@ class Sprite {
     }
 
     get frame() {
+        try {
+            this.animations[this.currentAnimation][this.currentAnimationFrame]
+        } catch (error) {
+            console.log(this.animations, this.currentAnimation, this.currentAnimationFrame);
+        }
         return this.animations[this.currentAnimation][this.currentAnimationFrame]
     }
 
@@ -70,9 +75,6 @@ class Sprite {
     }
 
     draw(ctx = new CanvasRenderingContext2D(), cameraPerson = new GameObject()) {
-        // const x = this.gameObject.x - 8 + withGrid(Math.floor(ctx.canvas.width/16)/2) - cameraPerson.x;
-        // const y = this.gameObject.y - 18 + withGrid(Math.floor(ctx.canvas.height/16)/2) - cameraPerson.y;
-
         const x = withGrid(this.gameObject.x) - 8 + withGrid(Math.floor(ctx.canvas.width / 16) / 2) - withGrid(cameraPerson.x);
         const y = withGrid(this.gameObject.y) - 18 + withGrid(Math.floor(ctx.canvas.height / 16) / 2) - withGrid(cameraPerson.y);
 

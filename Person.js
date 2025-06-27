@@ -49,7 +49,7 @@ class Person {
         this.overworld = overworld;
         overworld.characters.set(this.id, this);
         overworld.addWall(this.x, this.y);
-
+        this.server.io.to(overworld.id).emit("gameobject-mount", this.toJSON())
         return this;
     }
 
@@ -89,12 +89,18 @@ class Person {
                 console.log("Portal found, teleporting...");
                 this.overworld.removeWall(this.x, this.y);
                 this.updatePosition()
-                this.server.io.to(this.overworld.id).emit("gameobject-behavior", this.id, behavior)
+                behavior.pos = { x: this.x, y: this.y }
+                if (this.socket && !behavior.serverCommand) {
+                    this.server.io.to(this.overworld.id).except(this.socket.id).emit("gameobject-behavior", this.id, behavior)
+                } else {
+                    this.server.io.to(this.overworld.id).emit("gameobject-behavior", this.id, behavior)
+                }
                 this.overworld.usePortal(this.x, this.y, this.facing, this);
                 return;
             }
             if (this.overworld.isSpaceTaken(this.x, this.y, this.facing)) {
 
+                console.log(`${this.id} tried to move from (${this.x}, ${this.y}) facing ${this.facing}`);
                 behavior.retry && setTimeout(() => {
                     this.startBehavior(behavior)
                 }, 10);
@@ -107,6 +113,7 @@ class Person {
             }
             this.overworld.moveWall(this.x, this.y, this.facing)
             this.updatePosition()
+            behavior.pos = { x: this.x, y: this.y }
             console.log(`Moving ${this.id} to (${this.x}, ${this.y}) facing ${this.facing}`);
             if (this.socket && !behavior.serverCommand) {
                 this.server.io.to(this.overworld.id).except(this.socket.id).emit("gameobject-behavior", this.id, behavior)

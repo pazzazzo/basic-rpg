@@ -26,7 +26,7 @@ class Overworld {
         this.portals = config.portals || {};
 
         for (const character in config.characters) {
-            let char = new Person({ _id: character, ...config.characters[character] }, this.main)
+            let char = new Person({ _id: character, ...config.characters[character] }, this.server)
             char.mount(this);
         }
     }
@@ -56,7 +56,6 @@ class Overworld {
             person.y = y;
             person.facing = direction;
             person.changeOverworld(destWorld);
-            this.server.io.to(dest).emit("gameobject-mount", person.toJSON());
         }
     }
     addWall(x, y) {

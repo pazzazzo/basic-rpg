@@ -19,15 +19,19 @@ module.exports = class Player extends Person {
         this.isPlayer = true
         this.mount(server.overworlds.get(config.map))
         socket.join(this.overworld.id)
+        server.players.set(this.username, this)
 
-        socket.emit("map", this.overworld.toJSON())
-        socket.to(this.overworld.id).emit("gameobject-mount", this.toJSON())
+        socket.on("map", (cb) => {
+            cb(this.overworld.toJSON())
+        })
 
         socket.on("behavior", (behavior, cb) => {
+            behavior.timestamp = Date.now()
             this.startBehavior(behavior, cb)
         })
 
         socket.on("disconnect", () => {
+            server.players.delete(this.username)
             this.unmount()
         })
 
@@ -35,6 +39,7 @@ module.exports = class Player extends Person {
     toJSON() {
         return {
             id: this.id,
+            peerId: this.username,
             x: this.x,
             y: this.y,
             facing: this.facing,

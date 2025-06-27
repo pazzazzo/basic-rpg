@@ -1,6 +1,7 @@
 import GameObject from "./GameObject.js";
 import Main from "./Main.js";
 import Person from "./Person.js";
+import Portal from "./Portal.js";
 import { nextPosition, withGrid } from "./Utils.js";
 
 /**
@@ -33,8 +34,12 @@ class Overworld {
         /** @type {ScreenObject[]} */
         this.screens = config.screens || [];
 
-        /** @type {Object} */
-        this.portals = config.portals || {};
+        /** @type {Map<String, GameObject>} */
+        this.portals = new Map();
+
+        for (const key in config.portals) {
+            this.portals.set(key, new Portal(config.portals[key], key, main))
+        }
 
         config.characters.forEach(character => {
             this.addCharacter(character)
@@ -52,7 +57,7 @@ class Overworld {
 
     isPortal(currentX, currentY, direction) {
         const { x, y } = nextPosition(currentX, currentY, direction)
-        return this.portals[`${x},${y}`] || false
+        return this.portals.has(`${x},${y}`)
     }
 
     /**
@@ -72,7 +77,13 @@ class Overworld {
     }
 
     addCharacter(config) {
-        new Person(config, this.main).mount(this)
+        new Person(config, this.main, config.username == this.main.username).mount(this)
+    }
+
+    unmount() {
+        this.characters.forEach(c => {
+            c.unmount()
+        })
     }
 
     /**

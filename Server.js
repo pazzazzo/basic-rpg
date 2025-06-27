@@ -8,6 +8,7 @@ const Overworld = require('./Overworld.js');
 const ngrok = require('@ngrok/ngrok');
 const os = require("os")
 const PouchDB = require('pouchdb');
+const { ExpressPeerServer } = require("peer");
 
 require('dotenv').config()
 
@@ -20,7 +21,16 @@ module.exports = class Server {
         this.io = new IOServer(this.server);
         this.port = 3000
 
+        this.peerServer = ExpressPeerServer(this.server, {
+            debug: true,
+            path: "/"
+        });
+
         this.database = new PouchDB('./database');
+
+        this.links = []
+
+        this.players = new Map()
 
         this.overworlds = new Map();
 
@@ -46,38 +56,62 @@ module.exports = class Server {
             }, 1000);
         }
 
-        this.app.use(express.static("public"))
+        this.app.use("/", express.static("public"))
+        this.app.use("/peerjs", this.peerServer)
 
         this.io.on('connection', async (socket) => {
             console.log(`New connection from ${socket.id}`);
             let userData = await this.tryGet("user:" + socket.handshake.auth.username)
-            if (socket.handshake.auth.username && userData) {
-                let player = new Player(socket.handshake.auth.username, socket, this)
-                this.onNewPlayer(player)
-            } else {
-                socket.emit("login", async (username) => {
-                    userData = await this.tryGet("user:" + username)
-                    if (userData) {
-                        let player = new Player(userData, socket, this)
-                        this.onNewPlayer(player)
-                    } else {
-                        let user = {
-                            _id: `user:${username}`,
-                            x: 5,
-                            y: 6,
-                            map: "world:DemoRoom",
-                            skin: "hero",
-                            isPlayer: true
-                        }
-                        let r = await this.database.put(user)
-                        console.log(`Create user ${username}: ${r.ok ? "Success" : "Failed"}`);
 
-                        let player = new Player(user, socket, this)
+            socket.emit("links", this.links)
+
+            socket.on("login", async (username, cb) => {
+                userData = await this.tryGet("user:" + username)
+                if (userData) {
+                    if (this.players.has(username)) {
+                        cb({
+                            ok: false,
+                            message: "A session is already present on your account."
+                        })
+                    } else {
+                        let player = new Player(userData, socket, this)
+                        cb({ ok: true })
                         this.onNewPlayer(player)
                     }
-                    socket.request.headers['set-cookie'] = `username=${username}; Path=/; HttpOnly; SameSite=Strict`
-                })
-            }
+                } else {
+                    cb({
+                        ok: false,
+                        message: "This user doen't exist.",
+                        incorrect: ["username-inp"]
+                    })
+                }
+            })
+            socket.on("register", async ({ username, skin }, cb) => {
+                userData = await this.tryGet("user:" + username)
+                if (userData) {
+                    cb({
+                        ok: false,
+                        message: "This user already exist.",
+                        incorrect: ["register-username-inp"]
+                    })
+                } else {
+                    let user = {
+                        _id: `user:${username}`,
+                        x: 5,
+                        y: 6,
+                        map: "world:DemoRoom",
+                        skin: skin,
+                        isPlayer: true
+                    }
+                    let r = await this.database.put(user)
+                    console.log(`Create user ${username}: ${r.ok ? "Success" : "Failed"}`);
+
+                    let player = new Player(user, socket, this)
+                    cb({ ok: true })
+                    this.onNewPlayer(player)
+                }
+            })
+
 
             socket.on("disconnect", () => {
                 console.log(`Disconnection from ${socket.id}`);
@@ -87,13 +121,18 @@ module.exports = class Server {
         if (process.env.NODE_ENV !== 'test') {
             this.server.listen(this.port, async () => {
                 console.log(`App online at http://localhost:${this.port} 🟢`)
-                // const url = (await ngrok.connect({ addr: this.port, authtoken: NGROK_AUTH_TOKEN })).url()
-                // console.log(`App online at ${url} 🟢`);
+                if (process.env.online) {
+                    const url = (await ngrok.connect({ addr: this.port, authtoken: NGROK_AUTH_TOKEN })).url()
+                    console.log(`App online at ${url} 🟢`);
+                    this.links.push(url)
+                }
                 const interfaces = os.networkInterfaces();
                 Object.keys(interfaces).forEach((iface) => {
                     interfaces[iface].forEach((address) => {
                         if (address.family === 'IPv4' && !address.internal) {
-                            console.log(`App online at http://${address.address}:${this.port} 🟢`);
+                            const url = `http://${address.address}:${this.port}`
+                            console.log(`App online at ${url} 🟢`);
+                            this.links.push(url)
                         }
                     });
                 });

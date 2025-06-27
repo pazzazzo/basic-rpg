@@ -1,21 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <title>basic RPG</title>
 </head>
-<body>
-    <canvas></canvas>
-    <script type="module">
-        import Main from "./Main.js"
-        let main = new Main()
-        main.init()
 
-        window.__main = main
-    </script>
+<body class="init">
+    <div id="login-form" class="form">
+        <h1>Basic RPG</h1>
+        <p id="login-error" class="error"></p>
+        <input id="username-inp" type="text" placeholder="Username">
+        <input id="password-inp" type="password" placeholder="Password">
+        <div id="login-btn" class="button" data-text="Login">Login</div>
+        <div id="register-btn" class="button" data-text="Register">Register</div>
+    </div>
+    <div id="register-form" class="form cols hidden">
+        <div class="form-page">
+            <h1>Basic RPG - Register</h1>
+            <p id="register-error" class="error"></p>
+            <input id="register-username-inp" type="text" placeholder="Username">
+            <input id="register-password-inp" type="password" autocomplete="new-password" placeholder="Password">
+            <input id="register-password-repeat-inp" type="password" autocomplete="new-password"
+                placeholder="Repeat password">
+            <div id="register-login-btn" class="button" data-text="Login">Login</div>
+            <div id="register-register-btn" class="button" data-text="Register">Register</div>
+        </div>
+        <div class="form-page">
+            <canvas id="player-renderer" height="32" width="32"></canvas>
+            <div class="buttons">
+                <div id="char-prev-btn" class="button" data-text="<">L</div>
+                <div id="char-next-btn" class="button" data-text=">">R</div>
+            </div>
+        </div>
+    </div>
+    <canvas id="game" class="hidden"></canvas>
+    <div id="ui" class="hidden">
+        <div class="money">50$</div>
+    </div>
+    <script type="module" src="./index.js"></script>
 </body>
+
 </html>
