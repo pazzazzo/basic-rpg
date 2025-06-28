@@ -29,7 +29,7 @@ class KeyboardController {
             }
             if (k) {
                 if (this.look !== k && this.arrows.length === 0) {
-                    this.lookReaming = 5
+                    this.lookReaming = 10
                     this.look = k
                 }
                 this.arrows.push(k);
