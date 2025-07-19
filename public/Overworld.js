@@ -34,7 +34,7 @@ class Overworld {
         /** @type {ScreenObject[]} */
         this.screens = config.screens || [];
 
-        /** @type {Map<String, GameObject>} */
+        /** @type {Map<String, Portal>} */
         this.portals = new Map();
 
         for (const key in config.portals) {
@@ -68,6 +68,8 @@ class Overworld {
      * @param {Person} person 
      */
     usePortal(currentX, currentY, direction, person) {
+        console.log(person.id);
+        
         person.startBehavior({
             type: "walk",
             direction: direction,

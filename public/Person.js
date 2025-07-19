@@ -36,7 +36,18 @@ class Person extends GameObject {
             setTimeout(() => {
                 this.updateNametag()
             }, 10);
+        } else {
+            this.main.setMoneyRender(config.money)
         }
+
+        this.main.map?.portals.forEach(p => {
+            let s = p.speakers.get(this.id)
+            if (s) {
+                s.attach(this)
+                this.speaker = s
+                p.speakers.delete(this.id)
+            }
+        })
     }
 
     updateNametag() {
@@ -62,18 +73,12 @@ class Person extends GameObject {
                     }, 10);
                     return
                 }
-
-                this.overworld.moveWall(this.x, this.y, this.facing)
-                this.updateServerCoord()
-                this.movingProgressRemaining = 16
-                this.updateSprite()
-                !behavior.serverCommand && !behavior.serverBroadcast && this.main.socket.emit("behavior", behavior, (...a) => { this.stopBehviaor(...a) });
-            } else {
-                this.overworld.moveWall(this.x, this.y, this.facing)
-                this.updateServerCoord()
-                this.movingProgressRemaining = 16
-                this.updateSprite()
             }
+            this.overworld.moveWall(this.x, this.y, this.facing)
+            this.updateServerCoord()
+            this.movingProgressRemaining = behavior.run ? 8 : 16
+            this.updateSprite()
+            this.isMe && !behavior.serverCommand && !behavior.serverBroadcast && this.main.socket.emit("behavior", behavior, (...a) => { this.stopBehviaor(...a) });
             let t = nextPosition(this.x, this.y, this.facing);
             console.log(`Moving ${this.id} to (${t.x}, ${t.y}) facing ${this.facing} on ${this.main.map.id} with`, behavior);
         } else if (behavior.type === "walk") {
@@ -84,7 +89,7 @@ class Person extends GameObject {
 
         if (behavior.type === "stand") {
             this.isStanding = true
-            this.isMe && !behavior.serverCommand && !behavior.serverBroadcast && this.main.socket.emit("behavior", {serverCommand: true, ...behavior}, (...a) => { this.stopBehviaor(...a) });
+            this.isMe && !behavior.serverCommand && !behavior.serverBroadcast && this.main.socket.emit("behavior", { serverCommand: true, ...behavior }, (...a) => { this.stopBehviaor(...a) });
         }
     }
 
@@ -102,7 +107,7 @@ class Person extends GameObject {
                     this.main.keyboardController.lookReaming--
                 } else if (this.main.keyboardController.arrow) {
                     this.startBehavior({ type: "walk", direction: this.main.keyboardController.arrow })
-                } 
+                }
             }
             this.updateSprite()
         }

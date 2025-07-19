@@ -1,5 +1,6 @@
 import GameObject from "./GameObject.js";
 import Main from "./Main.js";
+import Speaker from "./Speaker.js";
 
 /**
  * @typedef {Object} PortalConfig
@@ -16,7 +17,12 @@ class Portal extends GameObject {
      * @param {Main} main 
      */
     constructor(config, key, main) {
-        super({}, main)
+        super({x: key.split(",")[0], y: key.split(",")[1], id: "portal:" + key, invisible: true}, main)
+
+        this.destMap = config.dest
+
+        /** @type {Map<String, Speaker>} */
+        this.speakers = new Map()
     }
 }
 

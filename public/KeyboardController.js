@@ -10,23 +10,32 @@ class KeyboardController {
         this.look = null
         this.arrows = []
         this.lookReaming = 0
+        this.isEnterPressed = false
 
         document.addEventListener("keydown", (e) => {
             let k
             switch (e.key) {
-                case "ArrowUp":
+                case "z":
                     k = "up"
                     break;
-                case "ArrowDown":
+                case "s":
                     k = "down"
                     break;
-                case "ArrowLeft":
+                case "q":
                     k = "left"
                     break;
-                case "ArrowRight":
+                case "d":
                     k = "right"
                     break;
+                case "Enter":
+                    if (!this.isEnterPressed) {
+                        main.mainAction()
+                    }
+                    this.isEnterPressed = true
+                    break;
             }
+            console.log(e.key);
+
             if (k) {
                 if (this.look !== k && this.arrows.length === 0) {
                     this.lookReaming = 5
@@ -38,22 +47,25 @@ class KeyboardController {
         });
 
         document.addEventListener("keyup", (e) => {
-            if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
-                let k
-                switch (e.key) {
-                    case "ArrowUp":
-                        k = "up"
-                        break;
-                    case "ArrowDown":
-                        k = "down"
-                        break;
-                    case "ArrowLeft":
-                        k = "left"
-                        break;
-                    case "ArrowRight":
-                        k = "right"
-                        break;
-                }
+            let k
+            switch (e.key) {
+                case "z":
+                    k = "up"
+                    break;
+                case "s":
+                    k = "down"
+                    break;
+                case "q":
+                    k = "left"
+                    break;
+                case "d":
+                    k = "right"
+                    break;
+                case "Enter":
+                    this.isEnterPressed = false
+                    break;
+            }
+            if (k) {
                 this.arrows = this.arrows.filter(a => a !== k)
                 this.arrow = this.arrows.length > 0 ? this.arrows[0] : null
             }

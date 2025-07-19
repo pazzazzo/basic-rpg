@@ -91,6 +91,7 @@ class Speaker {
      */
     attach(gameObject) {
         this.gameObject = gameObject
+        this.update()
         return this
     }
 

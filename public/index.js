@@ -19,6 +19,8 @@ const registerError = document.getElementById("register-error")
 
 let loginStep = 1
 
+window.socket = socket
+
 socket.on("links", links => {
     links.forEach(link => {
         console.log(link);
@@ -81,19 +83,31 @@ registerPasswordInp.oninput = inpEv
 registerPasswordRepeatInp.oninput = inpEv
 
 loginBtn.addEventListener("click", () => {
-    let v = usernameInp.value.replace(/ /g, "")
-    if (v) {
-        socket.emit("login", v, r => {
-            connect(r, loginError, v)
+    let username = usernameInp.value.replace(/ /g, "")
+    let password = passwordInp.value
+    if (username && password) {
+        socket.emit("login", {username, password}, r => {
+            connect(r, loginError, username)
         })
     }
 })
 registerRegisterBtn.addEventListener("click", () => {
-    let v = registerUsernameInp.value.replace(/ /g, "")
-    if (v) {
-        socket.emit("register", {username: v, skin: characters[selectedCharacter]}, r => {
-            connect(r, registerError, v)
-        })
+    let username = registerUsernameInp.value.replace(/ /g, "")
+    let password = registerPasswordInp.value
+    let password2 = registerPasswordRepeatInp.value
+    if (username) {
+        if (!password) {
+            registerError.innerText = `You must set a password`
+            registerPasswordInp.classList.add("incorrect")
+        } else if (password !== password2) {
+            registerError.innerText = `Passwords doesn't match`
+            registerPasswordInp.classList.add("incorrect")
+            registerPasswordRepeatInp.classList.add("incorrect")
+        } else {
+            socket.emit("register", { username, password, skin: characters[selectedCharacter] }, r => {
+                connect(r, registerError, username)
+            })
+        }
     }
 })
 

@@ -57,10 +57,10 @@ class Person {
      * 
      * @returns {Person}
      */
-    unmount() {
+    unmount(reason) {
         this.overworld.characters.delete(this.id);
         this.overworld.removeWall(this.x, this.y);
-        this.server.io.to(this.overworld.id).emit("gameobject-unmount", this.id);
+        this.server.io.to(this.overworld.id).emit("gameobject-unmount", this.id, reason);
         this.overworld = null;
 
         return this;
@@ -68,7 +68,7 @@ class Person {
 
     changeOverworld(overworld) {
         this.isPlayer && this.socket && this.socket.leave(this.overworld.id);
-        this.unmount();
+        this.unmount({"name": "changeworld", x: this.x, y: this.y, facing: this.facing});
         this.mount(overworld);
         if (this.isPlayer && this.socket) {
             this.socket.join(overworld.id);

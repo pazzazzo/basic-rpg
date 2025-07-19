@@ -1,6 +1,7 @@
 import KeyboardController from "./KeyboardController.js"
 import Overworld from "./Overworld.js"
 import Person from "./Person.js"
+import { nextPosition } from "./Utils.js"
 let updateRef
 class Main {
     constructor(username, socket, peer) {
@@ -16,6 +17,17 @@ class Main {
 
         /** @type {HTMLDivElement} */
         this.ui = document.querySelector("#ui")
+
+        /** @type {HTMLDivElement} */
+        this.moneyWidget = document.createElement("div")
+        this.moneyWidget.classList.add("money")
+
+        /** @type {HTMLSpanElement} */
+        this.moneySpan = document.createElement("span")
+        this.moneySpan.innerText = "0$"
+        this.moneyWidget.appendChild(this.moneySpan)
+
+        this.ui.appendChild(this.moneyWidget)
 
         /** @type {Overworld} */
         this.map = null
@@ -82,9 +94,18 @@ class Main {
             }
         })
 
-        this.socket.on("gameobject-unmount", (id) => {
+        this.socket.on("gameobject-unmount", (id, r) => {
             if (this.map.characters.has(id) && id !== this.username) {
+                console.log(r);
                 const gameObject = this.map.characters.get(id);
+                if (r.name === "changeworld") {
+                    let {x, y} = nextPosition(r.x, r.y, r.facing)
+                    let p = this.map.portals.get(`${x},${y}`)
+                    if (p) {
+                        p.speakers.set(id, gameObject.speaker)
+                        gameObject.speaker.attach(p)
+                    }
+                }
                 gameObject.unmount();
                 this.map.characters.delete(id);
             }
@@ -131,11 +152,20 @@ class Main {
             c.updateNametag()
         })
     }
-    visibilityChange () {
-            if (!document.hidden) {
-                this.lastBlur = Date.now()-2
+    mainAction() {
+        let {x, y} = nextPosition(this.player.x, this.player.y, this.player.facing);
+        this.map.characters.forEach((p, id) => {
+            if (p.x === x && p.y === y) {
+                console.log(id);
             }
+        })
+        
+    }
+    visibilityChange() {
+        if (!document.hidden) {
+            this.lastBlur = Date.now() - 2
         }
+    }
     parseCookies(cookie = document.cookie) {
         let output = {};
         cookie.split(/\s*;\s*/).forEach(function (pair) {
@@ -143,6 +173,9 @@ class Main {
             output[pair[0]] = pair.splice(1).join('=');
         });
         return output
+    }
+    setMoneyRender(amount) {
+        this.moneySpan.innerText = `${amount}$`
     }
     startGameLoop() {
         const step = () => {

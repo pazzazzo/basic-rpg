@@ -9,6 +9,8 @@ const ngrok = require('@ngrok/ngrok');
 const os = require("os")
 const PouchDB = require('pouchdb');
 const { ExpressPeerServer } = require("peer");
+const { createHash } = require('crypto');
+const CommandManager = require('./CommandsManager.js');
 
 require('dotenv').config()
 
@@ -33,6 +35,8 @@ module.exports = class Server {
         this.players = new Map()
 
         this.overworlds = new Map();
+
+        this.commandManager = new CommandManager(this)
 
         this.database.get("worldlist").then(v => {
             v.data.forEach(async worldID => {
@@ -65,10 +69,16 @@ module.exports = class Server {
 
             socket.emit("links", this.links)
 
-            socket.on("login", async (username, cb) => {
+            socket.on("login", async ({ username, password }, cb) => {
                 userData = await this.tryGet("user:" + username)
                 if (userData) {
-                    if (this.players.has(username)) {
+                    if (userData.password !== this.hashPassword(password)) {
+                        cb({
+                            ok: false,
+                            message: "Incorrect password.",
+                            incorrect: ["password-inp"]
+                        })
+                    } else if (this.players.has(username)) {
                         cb({
                             ok: false,
                             message: "A session is already present on your account."
@@ -86,7 +96,7 @@ module.exports = class Server {
                     })
                 }
             })
-            socket.on("register", async ({ username, skin }, cb) => {
+            socket.on("register", async ({ username, password, skin }, cb) => {
                 userData = await this.tryGet("user:" + username)
                 if (userData) {
                     cb({
@@ -100,8 +110,10 @@ module.exports = class Server {
                         x: 5,
                         y: 6,
                         map: "world:DemoRoom",
+                        password: this.hashPassword(password),
                         skin: skin,
-                        isPlayer: true
+                        isPlayer: true,
+                        money: 50
                     }
                     let r = await this.database.put(user)
                     console.log(`Create user ${username}: ${r.ok ? "Success" : "Failed"}`);
@@ -141,6 +153,17 @@ module.exports = class Server {
     }
     onNewPlayer(player) {
 
+    }
+
+    /**
+     * Génère le hash d'un mot de passe.
+     * @param {string} plainPassword - Le mot de passe en clair.
+     * @returns {String} - Le hash à stocker en base.
+     */
+    hashPassword(plainPassword) {
+        return createHash('sha256')
+            .update(plainPassword + process.env.SALT)
+            .digest('hex');
     }
 
     async tryGet(id) {

@@ -15,6 +15,7 @@ module.exports = class Player extends Person {
         console.log(`New player: ${this.username} (${socket.id})`);
         this.socket = socket
         this.server = server
+        this.money = config.money
         this.skin = config.skin || "hero"
         this.isPlayer = true
         this.mount(server.overworlds.get(config.map))
@@ -32,7 +33,7 @@ module.exports = class Player extends Person {
 
         socket.on("disconnect", () => {
             server.players.delete(this.username)
-            this.unmount()
+            this.unmount({name: "disconnect"})
         })
 
     }
@@ -46,7 +47,8 @@ module.exports = class Player extends Person {
             src: `./assets/characters/people/${this.skin}.png`,
             world: this.overworld.id,
             isPlayer: true,
-            username: this.username
+            username: this.username,
+            money: this.money ?? 50
         };
     }
 }
