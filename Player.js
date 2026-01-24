@@ -22,6 +22,17 @@ module.exports = class Player extends Person {
         socket.join(this.overworld.id)
         server.players.set(this.username, this)
 
+        socket.on("config.get", (cb) => {
+            cb(config.clientConfig || {
+                keybind: {
+                    "z": "dir.up",
+                    "q": "dir.left",
+                    "s": "dir.down",
+                    "d": "dir.right",
+                }
+            })
+        })
+
         socket.on("map", (cb) => {
             cb(this.overworld.toJSON())
         })
@@ -33,8 +44,11 @@ module.exports = class Player extends Person {
 
         socket.on("disconnect", () => {
             server.players.delete(this.username)
-            this.unmount({name: "disconnect"})
+            this.unmount({ name: "disconnect" })
         })
+
+    }
+    save() {
 
     }
     toJSON() {

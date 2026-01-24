@@ -30,6 +30,7 @@ socket.on("links", links => {
 socket.on("disconnect", (r, err) => {
     console.log("disc 2: ", r);
     if (loginStep === 0) {
+        window.__main.keyboardController.stop()
         window.__main.destroy()
         loginForm.classList.remove("hidden")
         document.body.classList.add("init")

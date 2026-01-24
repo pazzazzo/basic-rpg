@@ -38,11 +38,16 @@ class CommandManager {
                 if (args.type === "give") {
                     doc.money = 100
                 } else {
-                    
+
                 }
                 await this.server.database.put(doc)
                 console.log(`${args.player} has now admin ${doc.money}$`);
             })
+        })
+
+        new Command("reload", this).exec(() => {
+            console.log("Reload !");
+            server.reload()
         })
     }
     input(ch, key, setInput) {
@@ -196,6 +201,9 @@ class Command {
             if (i == this.args.length - 1 && canExecute) {
                 this.execution.call(this.commandManager, execArgs)
             }
+        }
+        if (!this.args.length) {
+            this.execution.call(this.commandManager, execArgs)
         }
     }
 

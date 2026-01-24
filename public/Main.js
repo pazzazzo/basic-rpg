@@ -1,6 +1,7 @@
 import KeyboardController from "./KeyboardController.js"
 import Overworld from "./Overworld.js"
 import Person from "./Person.js"
+import Settings from "./Settings.js"
 import { nextPosition } from "./Utils.js"
 let updateRef
 class Main {
@@ -31,6 +32,9 @@ class Main {
 
         /** @type {Overworld} */
         this.map = null
+
+        /** @type {Settings} */
+        this.settings = new Settings(this)
 
         /** @type {String} */
         this.username = username

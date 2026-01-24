@@ -17,7 +17,11 @@ require('dotenv').config()
 const { NGROK_AUTH_TOKEN } = process.env;
 
 module.exports = class Server {
-    constructor() {
+    /**
+     * @param {function} reload 
+     */
+    constructor(reload) {
+        this.reload = reload
         this.app = express();
         this.server = http.createServer(this.app);
         this.io = new IOServer(this.server);
@@ -113,7 +117,15 @@ module.exports = class Server {
                         password: this.hashPassword(password),
                         skin: skin,
                         isPlayer: true,
-                        money: 50
+                        money: 50,
+                        clientConfig: {
+                            keybind: {
+                                "z": "dir.up",
+                                "q": "dir.left",
+                                "s": "dir.down",
+                                "d": "dir.right",
+                            }
+                        },
                     }
                     let r = await this.database.put(user)
                     console.log(`Create user ${username}: ${r.ok ? "Success" : "Failed"}`);
@@ -164,6 +176,11 @@ module.exports = class Server {
         return createHash('sha256')
             .update(plainPassword + process.env.SALT)
             .digest('hex');
+    }
+
+    async stop() {
+        await this.io.close()
+        this.server.close()
     }
 
     async tryGet(id) {

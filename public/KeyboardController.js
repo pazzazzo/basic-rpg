@@ -11,65 +11,66 @@ class KeyboardController {
         this.arrows = []
         this.lookReaming = 0
         this.isEnterPressed = false
+        this.actions = {
+            "menu.resume": () => {
+                main.ui.querySelector("#menu").classList.toggle("hidden")
+            }
+        }
 
-        document.addEventListener("keydown", (e) => {
-            let k
-            switch (e.key) {
-                case "z":
-                    k = "up"
-                    break;
-                case "s":
-                    k = "down"
-                    break;
-                case "q":
-                    k = "left"
-                    break;
-                case "d":
-                    k = "right"
-                    break;
-                case "Enter":
-                    if (!this.isEnterPressed) {
-                        main.mainAction()
+        this.keydownListener = (e) => {
+            let keybind = main.settings.keybind[e.key]
+            if (keybind) {
+                if (keybind.startsWith("dir.")) {
+                    let k = keybind.replace("dir.", "")
+                    if (this.look !== k && this.arrows.length === 0) {
+                        this.lookReaming = 5
+                        this.look = k
                     }
-                    this.isEnterPressed = true
-                    break;
+                    this.arrows.push(k);
+                    this.arrow = this.arrows[0]
+                } else {
+                    main.socket.emit("gui.open", keybind)
+                }
+            } else {
+                switch (e.key) {
+                    case "Escape":
+                        main.ui.querySelector("#menu").classList.toggle("hidden")
+                        break;
+                    case "Enter":
+                        if (!this.isEnterPressed) {
+                            main.mainAction()
+                        }
+                        this.isEnterPressed = true
+                        break;
+                }
             }
             console.log(e.key);
+        }
 
-            if (k) {
-                if (this.look !== k && this.arrows.length === 0) {
-                    this.lookReaming = 5
-                    this.look = k
+        this.keyupListener = (e) => {
+            let keybind = main.settings.keybind[e.key]
+            if (keybind) {
+                if (keybind.startsWith("dir.")) {
+                    let k = keybind.replace("dir.", "")
+                    this.arrows = this.arrows.filter(a => a !== k)
+                    this.arrow = this.arrows.length > 0 ? this.arrows[0] : null
                 }
-                this.arrows.push(k);
-                this.arrow = this.arrows[0]
+            } else {
+                switch (e.key) {
+                    case "Enter":
+                        this.isEnterPressed = false
+                        break;
+                }
             }
-        });
+        }
 
-        document.addEventListener("keyup", (e) => {
-            let k
-            switch (e.key) {
-                case "z":
-                    k = "up"
-                    break;
-                case "s":
-                    k = "down"
-                    break;
-                case "q":
-                    k = "left"
-                    break;
-                case "d":
-                    k = "right"
-                    break;
-                case "Enter":
-                    this.isEnterPressed = false
-                    break;
-            }
-            if (k) {
-                this.arrows = this.arrows.filter(a => a !== k)
-                this.arrow = this.arrows.length > 0 ? this.arrows[0] : null
-            }
-        });
+
+        document.addEventListener("keydown", this.keydownListener);
+        document.addEventListener("keyup", this.keyupListener);
+    }
+    stop() {
+        document.removeEventListener("keydown", this.keydownListener);
+        document.removeEventListener("keyup", this.keyupListener);
     }
 }
 

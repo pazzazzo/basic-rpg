@@ -37,6 +37,35 @@ canvas {
     inset: 0;
 }
 
+.gui-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #00000080;
+    backdrop-filter: blur(8px);
+    z-index: 5;
+}
+
+.gui {
+    position: absolute;
+    min-width: 30%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    flex-direction: column;
+    padding: 1rem;
+    background-color: #75757556;
+    backdrop-filter: blur(8px);
+    border-radius: 1rem;
+    border: 1px solid #ffffff49;
+    z-index: 10;
+}
+
 .nametag {
     position: absolute;
     color: white;

@@ -33,7 +33,7 @@ const input = blessed.box({
     width: '100%',
     height: 3,
     inputOnFocus: true,
-    tags: true,  
+    tags: true,
     style: { fg: 'white' },
 });
 
@@ -54,7 +54,7 @@ console.command = (...t) => {
     logBox.add(`> ${t.join(" ")}`)
 }
 
-let server = new Server()
+let server = new Server(reload)
 
 screen.on('keypress', (ch, key) => {
     server.commandManager.input(ch, key, (text) => {
@@ -62,3 +62,16 @@ screen.on('keypress', (ch, key) => {
         screen.render()
     })
 });
+
+process.on("uncaughtException", (e) => {
+    console.error(e);
+})
+process.on("unhandledRejection", (e) => {
+    console.error(e);
+})
+
+async function reload() {
+    await server.stop()
+    Server = require("./Server.js")
+    server = new Server(reload)
+}
